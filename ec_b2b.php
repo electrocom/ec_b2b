@@ -60,11 +60,29 @@ class Ec_B2b extends Module
 
 
 
-        return parent::install()  && $this->registerHook('actionCartSave');
+        return parent::install()  && $this->registerHook('actionCartSave') && $this->registerHook('displayAfterCarrier')&& $this->registerHook('displayHeader')&& $this->registerHook('actionCarrierProcess');
 
 
     }
 
+    public function hookdisplayHeader($params){
+   if(isset($this->context->controller->php_self) && $this->context->controller->php_self=='order'){ //to add JS only at cart site
+
+        $this->context->controller->addCSS(($this->_path).'views/uploadfile.css');
+
+
+
+        $this->context->controller->addJS(($this->_path).'views/js/ec_b2b.js');
+        $this->context->controller->addJS(($this->_path).'views/js/jquery.uploadfile.min.js',false);
+
+
+
+      }
+    }
+
+public function hookactionCarrierProcess($params){
+
+}
 
     private function getInvoiceAddressId($id_customer, $active = true)
     {
@@ -86,6 +104,24 @@ class Ec_B2b extends Module
 
         return Cache::retrieve($cache_id);
     }
+
+
+    public function hookDisplayAfterCarrier($params){
+
+
+
+
+        $this->context->smarty->assign([
+            'my_module_name' => Configuration::get('MYMODULE_NAME'),
+            'my_module_link' => $this->context->link->getModuleLink('mymodule', 'display')
+        ]);
+
+        return $this->display(__FILE__, 'views/displayAfterCarrier.tpl');
+
+
+
+    }
+
 
     function hookActionCartSave($params){
 
