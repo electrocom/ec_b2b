@@ -66,14 +66,25 @@ class Ec_B2b extends Module
     }
 
 
-    private function updateOrderAddress($new_address_id) {
-        global $context;
+    private function getInvoiceAddressId($id_customer, $active = true)
+    {
+        if (!$id_customer) {
+            return false;
+        }
+        $cache_id = 'getInvoiceAddressId' . (int) $id_customer . '-' . (bool) $active;
+        if (!Cache::isStored($cache_id)) {
+            $result = (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue(
+                '
+				SELECT `id_address`
+				FROM `' . _DB_PREFIX_ . 'address`
+				WHERE `id_customer` = ' . (int) $id_customer . ' AND `deleted` = 0' . ($active ? ' AND `active` = 1' : '').' ORDER BY `id_address` ASC'
+            );
+            Cache::store($cache_id, $result);
 
+            return $result;
+        }
 
-        $context->cart->id_address_invoice= (int)Address::getFirstCustomerAddressId( $context->cart->id_customer);
-
-        $context->cart->save();
-
+        return Cache::retrieve($cache_id);
     }
 
     function hookActionCartSave($params){
@@ -84,7 +95,7 @@ class Ec_B2b extends Module
 
 if(    !$this->saveinvoiceaddress) {
     $this->saveinvoiceaddress=1;
-    $this->context->cart->id_address_invoice = (int)Address::getFirstCustomerAddressId( $this->context->cart->id_customer);
+    $this->context->cart->id_address_invoice = (int)$this->getInvoiceAddressId( $this->context->cart->id_customer);
     //$this->context->cart->id_address_delivery = 7;
     $this->context->cart->update();
 }
