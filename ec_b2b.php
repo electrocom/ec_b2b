@@ -26,13 +26,15 @@
  */
 declare(strict_types=1);
 
-require_once("install_sql.php");
+
 
 use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
 use PrestaShop\Module\Ec_Xmlfeed\Entity;
 
 class Ec_B2b extends Module
 {
+    private $saveinvoiceaddress=0;
+
     public function __construct()
     {
         $this->name = 'ec_b2b';
@@ -58,9 +60,38 @@ class Ec_B2b extends Module
 
 
 
-        return parent::install();
+        return parent::install()  && $this->registerHook('actionCartSave');
 
 
     }
+
+
+    private function updateOrderAddress($new_address_id) {
+        global $context;
+
+
+        $context->cart->id_address_invoice= (int)Address::getFirstCustomerAddressId( $context->cart->id_customer);
+
+        $context->cart->save();
+
+    }
+
+    function hookActionCartSave($params){
+
+
+//die('hookActionValidateOrder');
+
+
+if(    !$this->saveinvoiceaddress) {
+    $this->saveinvoiceaddress=1;
+    $this->context->cart->id_address_invoice = (int)Address::getFirstCustomerAddressId( $this->context->cart->id_customer);
+    //$this->context->cart->id_address_delivery = 7;
+    $this->context->cart->update();
+}
+
+
+
+    }
+
 
 }
